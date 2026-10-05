@@ -1,0 +1,6 @@
+# Core runtime & schema validation
+pydantic>=2.0.0
+
+# Testing & quality assurance
+pytest>=7.0.0
+pytest-cov>=4.0.0

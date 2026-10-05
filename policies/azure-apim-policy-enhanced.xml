@@ -1,0 +1,67 @@
+<policies>
+    <inbound>
+        <base />
+
+        <!-- 1. SAP / GFIS Engagement WBS Billing Header Resolution -->
+        <!-- Extracts client engagement code dynamically from request; defaults to standard PoC engagement code if omitted -->
+        <set-variable name="wbsElement" value='@(context.Request.Headers.GetValueOrDefault("X-EY-Billing-ID", context.Request.Headers.GetValueOrDefault("X-EY-WBS-Element", "WBS-ENGAGEMENT-998877")))' />
+        <set-header name="X-EY-WBS-Element" exists-action="override">
+            <value>@((string)context.Variables["wbsElement"])</value>
+        </set-header>
+
+        <!-- 2. Dynamic 3-Tier Enterprise Model Selection -->
+        <set-variable name="taskType" value='@(context.Request.Headers.GetValueOrDefault("X-EY-Task-Type", "standard").ToLowerInvariant())' />
+        <choose>
+            <!-- Tier 1: Bulk Ingestion & Fast Parsing (80% traffic -> $0.15/1M tokens) -->
+            <when condition='@(((string)context.Variables["taskType"]).Equals("bulk-extraction") || ((string)context.Variables["taskType"]).Equals("sec-chunking") || ((string)context.Variables["taskType"]).Equals("table-parsing"))'>
+                <set-variable name="targetDeployment" value="gpt-4o-mini" />
+            </when>
+            <!-- Tier 3: Deep Statutory Reasoning & Audit Proofing (5% traffic -> $15.00/1M tokens) -->
+            <when condition='@(((string)context.Variables["taskType"]).Equals("statutory-audit") || ((string)context.Variables["taskType"]).Equals("deep-reasoning") || ((string)context.Variables["taskType"]).Equals("tax-controversy"))'>
+                <set-variable name="targetDeployment" value="o1-preview" />
+            </when>
+            <!-- Tier 2: Standard Enterprise Workloads Default (15% traffic -> $2.50/1M tokens) -->
+            <!-- Prevents unclassified prompts from defaulting to expensive Tier 3 o1 endpoints -->
+            <otherwise>
+                <set-variable name="targetDeployment" value="gpt-4o" />
+            </otherwise>
+        </choose>
+
+        <!-- 3. Target Backend Service Configuration & URL Rewrite -->
+        <set-backend-service base-url='@("https://" + "{{azure-openai-resource-name}}" + ".openai.azure.com/openai/deployments/" + (string)context.Variables["targetDeployment"])' />
+        <rewrite-uri template="/chat/completions" copy-unmatched-params="true" />
+
+        <!-- 4. Zero-Trust Azure Native Managed Identity Auth -->
+        <authentication-managed-identity resource="https://cognitiveservices.azure.com" />
+
+        <!-- 5. Multi-Tenant Keyed Rate Limiting Guardrail -->
+        <!-- Keyed per subscription/client rather than a single global block to prevent noisy neighbor exhaustion -->
+        <rate-limit-by-key calls="500" renewal-period="60" counter-key='@(context.Subscription.Id ?? context.Request.IpAddress)' />
+    </inbound>
+
+    <backend>
+        <!-- Retry on HTTP 429 (Rate Limit) with exponential backoff before failing -->
+        <retry condition="@(context.Response.StatusCode == 429)" count="3" interval="1" max-interval="5" delta="1">
+            <forward-request timeout="60" />
+        </retry>
+    </backend>
+
+    <outbound>
+        <base />
+        <!-- Telemetry & Chargeback Audit Stamp -->
+        <set-header name="X-EY-Routed-Deployment" exists-action="override">
+            <value>@((string)context.Variables["targetDeployment"])</value>
+        </set-header>
+        <set-header name="X-EY-WBS-Element" exists-action="override">
+            <value>@((string)context.Variables["wbsElement"])</value>
+        </set-header>
+    </outbound>
+
+    <on-error>
+        <base />
+        <!-- Standardized Error Payload for Downstream Consumers -->
+        <set-header name="X-EY-WBS-Element" exists-action="override">
+            <value>@((string)context.Variables.GetValueOrDefault("wbsElement", "UNKNOWN"))</value>
+        </set-header>
+    </on-error>
+</policies>

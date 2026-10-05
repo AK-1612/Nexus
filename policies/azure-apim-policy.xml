@@ -1,0 +1,31 @@
+<policies>
+    <inbound>
+        <base />
+        <!-- 1. Dynamic Model Routing based on Task Header -->
+        <choose>
+            <when condition='@(context.Request.Headers.GetValueOrDefault("X-EY-Task-Type", "").Equals("bulk-extraction", StringComparison.OrdinalIgnoreCase))'>
+                <set-backend-service base-url="https://your-resource-name.openai.azure.com/openai/deployments/gpt-4o-mini" />
+            </when>
+            <otherwise>
+                <set-backend-service base-url="https://your-resource-name.openai.azure.com/openai/deployments/o1-preview" />
+            </otherwise>
+        </choose>
+
+        <!-- 2. SAP / GFIS Engagement WBS Billing Header Injection -->
+        <set-header name="X-EY-WBS-Element" exists-action="override">
+            <value>WBS-ENGAGEMENT-998877</value>
+        </set-header>
+
+        <!-- 3. Enterprise Rate Limiting & Security Guardrail -->
+        <rate-limit calls="500" renewal-period="60" />
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>
