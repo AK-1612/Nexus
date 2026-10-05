@@ -2,8 +2,9 @@
     <inbound>
         <base />
         <!-- 1. Dynamic Model Routing based on Task Header -->
+        <set-variable name="taskType" value='@(context.Request.Headers.GetValueOrDefault("X-Task-Type", context.Request.Headers.GetValueOrDefault("X-Enterprise-Task-Type", context.Request.Headers.GetValueOrDefault("X-EY-Task-Type", ""))))' />
         <choose>
-            <when condition='@(context.Request.Headers.GetValueOrDefault("X-EY-Task-Type", "").Equals("bulk-extraction", StringComparison.OrdinalIgnoreCase))'>
+            <when condition='@(((string)context.Variables["taskType"]).Equals("bulk-extraction", StringComparison.OrdinalIgnoreCase))'>
                 <set-backend-service base-url="https://your-resource-name.openai.azure.com/openai/deployments/gpt-4o-mini" />
             </when>
             <otherwise>
@@ -11,9 +12,10 @@
             </otherwise>
         </choose>
 
-        <!-- 2. SAP / GFIS Engagement WBS Billing Header Injection -->
-        <set-header name="X-EY-WBS-Element" exists-action="override">
-            <value>WBS-ENGAGEMENT-998877</value>
+        <!-- 2. ERP / SAP Engagement WBS Billing Header Injection -->
+        <set-variable name="wbsElement" value='@(context.Request.Headers.GetValueOrDefault("X-WBS-Element", context.Request.Headers.GetValueOrDefault("X-Cost-Center", context.Request.Headers.GetValueOrDefault("X-Billing-ID", context.Request.Headers.GetValueOrDefault("X-EY-WBS-Element", "WBS-CORP-998877")))))' />
+        <set-header name="X-WBS-Element" exists-action="override">
+            <value>@((string)context.Variables["wbsElement"])</value>
         </set-header>
 
         <!-- 3. Enterprise Rate Limiting & Security Guardrail -->

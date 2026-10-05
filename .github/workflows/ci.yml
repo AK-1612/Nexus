@@ -1,4 +1,4 @@
-name: Enterprise Governance & APIM Policy CI
+name: Enterprise LLM Gateway & Governance CI
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [main, master]
 
 jobs:
-  validate:
-    name: Validate APIM Policies & Copilot Rules
+  test-and-validate:
+    name: Validate Policies, Schemas & Copilot Governance
     runs-on: ubuntu-latest
 
     steps:
@@ -24,7 +24,22 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install pyyaml pytest pytest-cov
 
-      - name: Execute Policy & Governance Test Suite
+      - name: Validate APIM Policy XML Well-Formedness
         run: |
-          python -m unittest discover tests -v
+          python -c "import xml.etree.ElementTree as ET
+          ET.parse('policies/azure-apim-policy.xml')
+          ET.parse('policies/azure-apim-policy-enhanced.xml')
+          ET.parse('policies/fragments/routing.xml')
+          ET.parse('policies/fragments/chargeback.xml')
+          ET.parse('policies/fragments/guardrails.xml')
+          print('All APIM XML policies well-formed!')"
+
+      - name: Lint CI Workflow YAML
+        run: |
+          python -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml')); print('CI Workflow YAML Valid!')"
+
+      - name: Run Pytest Suite with Coverage
+        run: |
+          pytest tests/ -v --cov=src

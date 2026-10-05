@@ -1,6 +1,6 @@
 # Documentation & Architecture Repository
 
-This directory contains the executive presentations, strategic evaluations, architectural diagrams, and empirical lab research notes supporting the EY Internal Model Switching & Governance architecture.
+This directory contains the executive presentations, strategic evaluations, architectural diagrams, and empirical lab research notes supporting the Enterprise Internal Model Switching & Governance architecture.
 
 ---
 

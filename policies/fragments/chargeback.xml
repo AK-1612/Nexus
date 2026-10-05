@@ -1,0 +1,7 @@
+<!-- Policy Fragment: ERP / SAP WBS Engagement Cost-Center Chargeback -->
+<fragment>
+    <set-variable name="wbsElement" value='@(context.Request.Headers.GetValueOrDefault("X-Billing-ID", context.Request.Headers.GetValueOrDefault("X-WBS-Element", context.Request.Headers.GetValueOrDefault("X-Cost-Center", "WBS-CORP-998877"))))' />
+    <set-header name="X-WBS-Element" exists-action="override">
+        <value>@((string)context.Variables["wbsElement"])</value>
+    </set-header>
+</fragment>

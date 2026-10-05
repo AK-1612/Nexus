@@ -1,4 +1,4 @@
-# EY Enterprise GitHub Copilot Governance Rules
+# Enterprise GitHub Copilot Governance & Routing Rules
 
 ## 1. Scope & Execution Routing
 - **Standard Development (`/src/**`):** 
@@ -10,3 +10,4 @@
 ## 2. Code Quality & Formatting Mandates
 - **Schema Validation:** All financial calculations, trial balance parsing, and data extractions must utilize strict Pydantic v2 schemas or strongly typed type hints.
 - **Data Privacy:** Prohibit hardcoding credentials, API keys, or unmasked PII in generated test mocks.
+- **Error Handling:** All external service calls must implement explicit timeout, retry with backoff, and circuit breaker patterns.

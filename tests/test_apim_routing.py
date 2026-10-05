@@ -1,87 +1,110 @@
 """
-EY Dynamic Model Routing & Governance PoC Verification Suite
+Enterprise Dynamic Model Routing & Governance Verification Suite.
 Validates APIM dynamic routing logic, WBS element injection, and Copilot instruction compliance.
 """
 
 import os
 import unittest
+import xml.etree.ElementTree as ET
 from typing import Dict, Tuple
 
 class TestAPIMRoutingSimulation(unittest.TestCase):
     """Simulates Azure APIM policy evaluation logic for routing and chargebacks."""
 
-    PRICING_PER_1M = {
-        "gpt-4o-mini": 0.15,
-        "gpt-4o": 2.50,
-        "o1-preview": 15.00,
-    }
-
     def simulate_baseline_apim_policy(self, headers: Dict[str, str]) -> Tuple[str, str]:
         """
-        Simulates the baseline azure-apim-policy.xml:
-        - If X-EY-Task-Type == 'bulk-extraction' (case-insensitive) -> gpt-4o-mini
+        Simulates policies/azure-apim-policy.xml:
+        - If taskType == 'bulk-extraction' (case-insensitive) -> gpt-4o-mini
         - Otherwise -> o1-preview
-        - WBS is fixed to WBS-ENGAGEMENT-998877
+        - WBS defaults to WBS-CORP-998877
         """
-        task_type = headers.get("X-EY-Task-Type", "")
-        if task_type.strip().lower() == "bulk-extraction":
+        task_type = (
+            headers.get("X-Task-Type")
+            or headers.get("X-Enterprise-Task-Type")
+            or headers.get("X-EY-Task-Type")
+            or ""
+        ).strip().lower()
+
+        if task_type == "bulk-extraction":
             target_deployment = "gpt-4o-mini"
         else:
             target_deployment = "o1-preview"
 
-        wbs_element = "WBS-ENGAGEMENT-998877"
+        wbs_element = (
+            headers.get("X-WBS-Element")
+            or headers.get("X-Cost-Center")
+            or headers.get("X-Billing-ID")
+            or headers.get("X-EY-WBS-Element")
+            or "WBS-CORP-998877"
+        )
         return target_deployment, wbs_element
 
     def simulate_enhanced_apim_policy(self, headers: Dict[str, str]) -> Tuple[str, str]:
         """
-        Simulates the enhanced azure-apim-policy-enhanced.xml:
+        Simulates policies/azure-apim-policy-enhanced.xml:
         - 3-tier spectrum (bulk-extraction -> gpt-4o-mini, statutory-audit -> o1-preview, other -> gpt-4o)
         - Dynamic WBS resolution with default fallback
         """
-        task_type = headers.get("X-EY-Task-Type", "standard").strip().lower()
-        if task_type in ["bulk-extraction", "sec-chunking", "table-parsing"]:
+        task_type = (
+            headers.get("X-Task-Type")
+            or headers.get("X-Enterprise-Task-Type")
+            or headers.get("X-EY-Task-Type")
+            or "standard"
+        ).strip().lower()
+
+        if task_type in ["bulk-extraction", "sec-chunking", "table-parsing", "fast-ingestion"]:
             target_deployment = "gpt-4o-mini"
-        elif task_type in ["statutory-audit", "deep-reasoning", "tax-controversy"]:
+        elif task_type in ["statutory-audit", "deep-reasoning", "tax-controversy", "legal-reasoning"]:
             target_deployment = "o1-preview"
         else:
             target_deployment = "gpt-4o"
 
-        wbs_element = headers.get("X-EY-Billing-ID") or headers.get("X-EY-WBS-Element") or "WBS-ENGAGEMENT-998877"
+        wbs_element = (
+            headers.get("X-Billing-ID")
+            or headers.get("X-WBS-Element")
+            or headers.get("X-Cost-Center")
+            or headers.get("X-EY-Billing-ID")
+            or "WBS-CORP-998877"
+        )
         return target_deployment, wbs_element
 
     def test_baseline_bulk_extraction_routing(self):
-        headers = {"X-EY-Task-Type": "bulk-extraction"}
+        headers = {"X-Task-Type": "bulk-extraction"}
+        deployment, wbs = self.simulate_baseline_apim_policy(headers)
+        self.assertEqual(deployment, "gpt-4o-mini")
+        self.assertEqual(wbs, "WBS-CORP-998877")
+
+    def test_baseline_legacy_header_backward_compatibility(self):
+        headers = {"X-EY-Task-Type": "bulk-extraction", "X-EY-WBS-Element": "WBS-ENGAGEMENT-998877"}
         deployment, wbs = self.simulate_baseline_apim_policy(headers)
         self.assertEqual(deployment, "gpt-4o-mini")
         self.assertEqual(wbs, "WBS-ENGAGEMENT-998877")
 
     def test_baseline_default_fallback_routing(self):
-        headers = {"X-EY-Task-Type": "complex-legal-review"}
+        headers = {"X-Task-Type": "complex-legal-review"}
         deployment, wbs = self.simulate_baseline_apim_policy(headers)
         self.assertEqual(deployment, "o1-preview")
-        self.assertEqual(wbs, "WBS-ENGAGEMENT-998877")
+        self.assertEqual(wbs, "WBS-CORP-998877")
 
     def test_enhanced_3_tier_routing(self):
         # Tier 1
-        d1, w1 = self.simulate_enhanced_apim_policy({"X-EY-Task-Type": "sec-chunking", "X-EY-Billing-ID": "WBS-CLIENT-12345"})
+        d1, w1 = self.simulate_enhanced_apim_policy({"X-Task-Type": "sec-chunking", "X-WBS-Element": "WBS-CLIENT-12345"})
         self.assertEqual(d1, "gpt-4o-mini")
         self.assertEqual(w1, "WBS-CLIENT-12345")
 
         # Tier 2
-        d2, w2 = self.simulate_enhanced_apim_policy({"X-EY-Task-Type": "general-dialogue"})
+        d2, w2 = self.simulate_enhanced_apim_policy({"X-Task-Type": "general-dialogue"})
         self.assertEqual(d2, "gpt-4o")
-        self.assertEqual(w2, "WBS-ENGAGEMENT-998877")
+        self.assertEqual(w2, "WBS-CORP-998877")
 
         # Tier 3
-        d3, w3 = self.simulate_enhanced_apim_policy({"X-EY-Task-Type": "statutory-audit"})
+        d3, w3 = self.simulate_enhanced_apim_policy({"X-Task-Type": "statutory-audit"})
         self.assertEqual(d3, "o1-preview")
-        self.assertEqual(w3, "WBS-ENGAGEMENT-998877")
+        self.assertEqual(w3, "WBS-CORP-998877")
 
     def test_copilot_instructions_file_exists(self):
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         path = os.path.join(project_root, ".github", "copilot-instructions.md")
-        if not os.path.exists(path):
-            path = os.path.join(os.path.dirname(__file__), ".github", "copilot-instructions.md")
         self.assertTrue(os.path.exists(path), f"copilot-instructions.md must exist in .github/ (checked {path})")
         with open(path, "r", encoding="utf-8") as f:
             content = f.read()
@@ -92,19 +115,23 @@ class TestAPIMRoutingSimulation(unittest.TestCase):
             self.assertIn("Pydantic", content)
 
     def test_apim_policy_xml_well_formed(self):
-        import xml.etree.ElementTree as ET
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        for policy_file in ["azure-apim-policy.xml", "azure-apim-policy-enhanced.xml"]:
-            policy_path = os.path.join(project_root, "policies", policy_file)
-            self.assertTrue(os.path.exists(policy_path), f"{policy_file} must exist in policies/")
+        policy_files = [
+            os.path.join(project_root, "policies", "azure-apim-policy.xml"),
+            os.path.join(project_root, "policies", "azure-apim-policy-enhanced.xml"),
+            os.path.join(project_root, "policies", "fragments", "routing.xml"),
+            os.path.join(project_root, "policies", "fragments", "chargeback.xml"),
+            os.path.join(project_root, "policies", "fragments", "guardrails.xml"),
+        ]
+        for policy_path in policy_files:
+            self.assertTrue(os.path.exists(policy_path), f"Policy file {policy_path} must exist")
             try:
                 tree = ET.parse(policy_path)
                 root = tree.getroot()
-                self.assertEqual(root.tag, "policies")
+                self.assertIn(root.tag, ["policies", "fragment"])
             except ET.ParseError as e:
-                self.fail(f"Policy file {policy_file} is not valid XML: {e}")
+                self.fail(f"Policy file {policy_path} is not valid XML: {e}")
 
 
 if __name__ == "__main__":
     unittest.main()
-

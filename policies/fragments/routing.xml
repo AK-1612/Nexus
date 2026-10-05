@@ -1,0 +1,20 @@
+<!-- Policy Fragment: Dynamic 3-Tier Enterprise Model Selection -->
+<fragment>
+    <set-variable name="taskType" value='@(context.Request.Headers.GetValueOrDefault("X-Task-Type", context.Request.Headers.GetValueOrDefault("X-Enterprise-Task-Type", "standard")).ToLowerInvariant())' />
+    <choose>
+        <!-- Tier 1: Bulk Ingestion & Fast Parsing (80% traffic -> $0.15/1M tokens) -->
+        <when condition='@(((string)context.Variables["taskType"]).Equals("bulk-extraction") || ((string)context.Variables["taskType"]).Equals("sec-chunking") || ((string)context.Variables["taskType"]).Equals("table-parsing") || ((string)context.Variables["taskType"]).Equals("fast-ingestion"))'>
+            <set-variable name="targetDeployment" value="gpt-4o-mini" />
+        </when>
+        <!-- Tier 3: Deep Statutory Reasoning & Audit Proofing (5% traffic -> $15.00/1M tokens) -->
+        <when condition='@(((string)context.Variables["taskType"]).Equals("statutory-audit") || ((string)context.Variables["taskType"]).Equals("deep-reasoning") || ((string)context.Variables["taskType"]).Equals("tax-controversy") || ((string)context.Variables["taskType"]).Equals("legal-reasoning"))'>
+            <set-variable name="targetDeployment" value="o1-preview" />
+        </when>
+        <!-- Tier 2: Standard Enterprise Workloads Default (15% traffic -> $2.50/1M tokens) -->
+        <otherwise>
+            <set-variable name="targetDeployment" value="gpt-4o" />
+        </otherwise>
+    </choose>
+    <set-backend-service base-url='@("https://" + "{{azure-openai-resource-name}}" + ".openai.azure.com/openai/deployments/" + (string)context.Variables["targetDeployment"])' />
+    <rewrite-uri template="/chat/completions" copy-unmatched-params="true" />
+</fragment>
