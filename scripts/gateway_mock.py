@@ -6,8 +6,10 @@ Emulates Azure APIM policy evaluation, dynamic model routing, and ERP WBS header
 
 import argparse
 import json
+from datetime import datetime, timezone
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from src.orchestrator.router import DynamicModelRouter
+from src.schemas.telemetry import TelemetryEvent
 
 
 router = DynamicModelRouter()
@@ -29,11 +31,21 @@ class MockAPIMHandler(BaseHTTPRequestHandler):
             or "standard"
         )
         wbs_element = (
-            self.headers.get("X-WBS-Element")
+            self.headers.get("X-EY-WBS-Element")
+            or self.headers.get("X-WBS-Element")
             or self.headers.get("X-Cost-Center")
             or self.headers.get("X-Billing-ID")
-            or "WBS-CORP-998877"
+            or ""
         )
+        if not wbs_element.startswith("WBS-"):
+            response = {"error": "Missing or invalid X-EY-WBS-Element billing identifier"}
+            response_bytes = json.dumps(response).encode("utf-8")
+            self.send_response(400)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(response_bytes)))
+            self.end_headers()
+            self.wfile.write(response_bytes)
+            return
 
         # Evaluate routing
         first_message = ""
@@ -69,6 +81,12 @@ class MockAPIMHandler(BaseHTTPRequestHandler):
                 "routed_deployment": tier_config.deployment_name,
                 "estimated_transaction_cost_usd": est_cost,
             },
+            "telemetry": TelemetryEvent(
+                timestamp=datetime.now(timezone.utc),
+                wbsElement=wbs_element,
+                promptComplexity=router.classify_prompt_complexity(first_message),
+                tokenCount=1800,
+            ).to_dict(),
         }
 
         response_bytes = json.dumps(response_payload, indent=2).encode("utf-8")

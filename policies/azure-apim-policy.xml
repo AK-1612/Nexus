@@ -12,9 +12,18 @@
             </otherwise>
         </choose>
 
-        <!-- 2. ERP / SAP Engagement WBS Billing Header Injection -->
-        <set-variable name="wbsElement" value='@(context.Request.Headers.GetValueOrDefault("X-WBS-Element", context.Request.Headers.GetValueOrDefault("X-Cost-Center", context.Request.Headers.GetValueOrDefault("X-Billing-ID", context.Request.Headers.GetValueOrDefault("X-EY-WBS-Element", "WBS-CORP-998877")))))' />
-        <set-header name="X-WBS-Element" exists-action="override">
+        <!-- 2. Mandatory ERP / SAP Engagement WBS Billing Header -->
+        <set-variable name="wbsElement" value='@(context.Request.Headers.GetValueOrDefault("X-EY-WBS-Element", context.Request.Headers.GetValueOrDefault("X-WBS-Element", context.Request.Headers.GetValueOrDefault("X-Cost-Center", context.Request.Headers.GetValueOrDefault("X-Billing-ID", "")))))' />
+        <choose condition='@(!((string)context.Variables["wbsElement"]).StartsWith("WBS-"))'>
+            <return-response>
+                <set-status code="400" reason="Bad Request" />
+                <set-header name="Content-Type" exists-action="override">
+                    <value>application/json</value>
+                </set-header>
+                <set-body>@("{\"error\":\"Missing or invalid X-EY-WBS-Element billing identifier\"}")</set-body>
+            </return-response>
+        </choose>
+        <set-header name="X-EY-WBS-Element" exists-action="override">
             <value>@((string)context.Variables["wbsElement"])</value>
         </set-header>
 

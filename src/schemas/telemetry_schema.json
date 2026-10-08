@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.nexus.enterprise/telemetry-event.json",
+  "title": "NEXUS Pattern B Telemetry Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "timestamp",
+    "wbsElement",
+    "promptComplexity",
+    "tokenCount"
+  ],
+  "properties": {
+    "timestamp": {"type": "string", "format": "date-time"},
+    "wbsElement": {"type": "string", "pattern": "^WBS-[A-Z0-9_-]+$"},
+    "promptComplexity": {"type": "string", "enum": ["low", "high"]},
+    "tokenCount": {"type": "integer", "minimum": 1}
+  }
+}
