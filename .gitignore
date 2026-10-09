@@ -32,6 +32,8 @@ wheels/
 .installed.cfg
 *.egg
 .pytest_cache/
+.coverage
+htmlcov/
 
 # IDE & Editors
 .vscode/

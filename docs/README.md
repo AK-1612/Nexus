@@ -1,26 +1,26 @@
-# Documentation & Architecture Repository
+# Project Nexus Documentation
 
-This directory contains the executive presentations, strategic evaluations, architectural diagrams, and empirical lab research notes supporting the Enterprise Internal Model Switching & Governance architecture.
+This directory contains the core documentation and presentation assets for **Nexus: Enterprise LLM Token Optimization, Governance & Resilient Routing Engine**.
 
 ---
 
 ## Directory Index
 
-### 1. Executive Presentations (`docs/presentations/`)
-- **`Internal Model Switching for GPT & Copilot Ecosystems..pdf`** / **`.pptx`**:
-  * Executive presentation on native dynamic routing across Azure OpenAI & GitHub Copilot ecosystems.
-  * Details the $17.3M global annual savings model, 100% Azure tenant enclosure (SOC2 Type II compliance), sub-50ms developer SLA, and swapping Patterns A, B, and C.
-- **`Enterprise LLM Token Optimization..pdf`** / **`.pptx`**:
-  * Comprehensive slide deck on enterprise token optimization frameworks, rate limiting, and multi-tier model spectra.
+### 1. Master Presentations (`docs/presentations/`)
+- **[`Project Nexus.pptx`](file:///Users/anshulk/Downloads/Task%209%20-%20Dynamic%20LLM%20Routing./docs/presentations/Project%20Nexus.pptx)** & **[`Project Nexus.pdf`](file:///Users/anshulk/Downloads/Task%209%20-%20Dynamic%20LLM%20Routing./docs/presentations/Project%20Nexus.pdf)**:
+  - **Author**: Anshul Vikas Kumaria (Summer Intern, AI Research Team)
+  - **Topic**: Enterprise LLM Token Optimization, Governance & Resilient Routing Engine
+  - **Key Sections**:
+    - **The Problem**: Rapid token cost inflation, unmonitored model calls, lack of cost-center billing attribution, single-provider failure risks.
+    - **The Solution**: Decoupled application-level routing engine combining pre-request perimeter validation, 3-tier model spectrum selection, automated fallback resilience, and zero-tolerance telemetry auditing.
+    - **3-Tier Model Spectrum**:
+      - *Tier 1 (Fast SLM)*: `gpt-4o-mini` ($0.15 / $0.60 per 1M tokens) for bulk extraction, parsing, formatting, and chunking.
+      - *Tier 2 (General Workhorse)*: `gpt-4o` ($2.50 / $10.00 per 1M tokens) for architecture, multi-region workflows, and complex logic.
+      - *Tier 3 (Frontier Reasoning)*: `o1-preview` ($15.00 / $60.00 per 1M tokens) for statutory audit and high-risk proofs.
+    - **Perimeter Defense**: Strict `X-EY-WBS-Element` header verification before external gateway contact.
+    - **Resilient Transport**: Retries with exponential backoff (1s, 2s, 4s), circuit breaker trip protection, and automatic fallback to local sandbox.
+    - **Telemetry & Audit**: Zero-tolerance schema contract (`TelemetryEvent`) with `extra="forbid"`.
 
-### 2. Research & Architecture Notes (`docs/research-notes/`)
-- **`Enterprise LLM Token Optimization & Dynamic Model Routing - Notes..pages`** / **`.pdf`**:
-  * The 6 Pillars of Token Governance:
-    * Layer 1: Zero-Token Interception (Semantic vector caching via Redis/GPTCache)
-    * Layer 2: Prompt & Context Compression (Microsoft LLMLingua entropy scoring & cross-encoder reranking)
-    * Layer 3: Provider KV Caching (Prefix tree memory reuse)
-    * Layer 4: Dynamic Model Routing (Stanford FrugalGPT & UC Berkeley RouteLLM cascades)
-    * Layer 5: Output Schema Locking (Grammar-guided finite state machine generation via Pydantic/Instructor)
-    * Layer 6: Enterprise Gateways (APIM sidecars, real-time cost accounting, and region fallbacks)
-- **`Enterprise LLM Token Optimization & Dynamic Model Routing..pages`** / **`.pdf`**:
-  * Extended operational write-up and implementation guidelines.
+### 2. Telemetry Schema (`src/schemas/`)
+- **[`src/schemas/telemetry.py`](file:///Users/anshulk/Downloads/Task%209%20-%20Dynamic%20LLM%20Routing./src/schemas/telemetry.py)**: Pydantic v2 strict schema model.
+- **[`src/schemas/telemetry_schema.json`](file:///Users/anshulk/Downloads/Task%209%20-%20Dynamic%20LLM%20Routing./src/schemas/telemetry_schema.json)**: JSON schema specification validating `timestamp`, `wbsElement`, `promptComplexity`, and `tokenCount`.

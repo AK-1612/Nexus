@@ -1,5 +1,0 @@
-<!-- Policy Fragment: Enterprise Security & Rate Limiting Guardrails -->
-<fragment>
-    <authentication-managed-identity resource="https://cognitiveservices.azure.com" />
-    <rate-limit-by-key calls="500" renewal-period="60" counter-key='@(context.Subscription.Id ?? context.Request.IpAddress)' />
-</fragment>

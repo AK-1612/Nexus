@@ -45,32 +45,32 @@ MODEL_TIERS: Dict[str, ModelTierConfig] = {
 }
 
 TIER_1_PATTERNS = (
-    r"bulk[-_]extract",
+    r"bulk[-_ ]extract",
     r"chunking",
-    r"json[-_]parse",
-    r"table[-_]extract",
+    r"json[-_ ]parse",
+    r"table[-_ ]extract",
     r"tokenize",
-    r"sec[-_]filing[-_]parse",
+    r"sec[-_ ]filing[-_ ]parse",
     r"syntax",
     r"boilerplate",
     r"simple[-_ ]typo",
     r"variable[-_ ]name",
 )
 TIER_3_PATTERNS = (
-    r"statutory[-_]audit",
-    r"revenue[-_]recognition",
-    r"tax[-_]controversy",
-    r"legal[-_]indemnification",
-    r"chain[-_]of[-_]thought",
-    r"multi[-_]step[-_]proof",
+    r"statutory[-_ ]audit",
+    r"revenue[-_ ]recognition",
+    r"tax[-_ ]controversy",
+    r"legal[-_ ]indemnification",
+    r"chain[-_ ]of[-_ ]thought",
+    r"multi[-_ ]step[-_ ]proof",
 )
 HIGH_COMPLEXITY_PATTERNS = (
     r"architecture",
-    r"deep[-_]debugging",
-    r"design[-_]system",
-    r"multi[-_]region",
-    r"complex[-_]logic",
-    r"security[-_]review",
+    r"deep[-_ ]debugging",
+    r"design[-_ ]system",
+    r"multi[-_ ]region",
+    r"complex[-_ ]logic",
+    r"security[-_ ]review",
 )
 
 
