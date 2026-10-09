@@ -32,9 +32,9 @@ from src.schemas.telemetry import TelemetryEvent
 # Tier 3 (frontier)   → best available local model
 
 OLLAMA_MODEL_MAP = {
-    1: "llama3:latest",   # Fast SLM equivalent
-    2: "qwen3:8b",        # Advanced workhorse equivalent
-    3: "qwen3:8b",        # Frontier equivalent (best available locally)
+    1: "llama3:latest",
+    2: "llama3:latest",
+    3: "llama3:latest",       # Frontier equivalent (best available locally)
 }
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
@@ -60,6 +60,7 @@ def call_ollama(model: str, prompt: str) -> str:
     payload = json.dumps({
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
+        "options": {"num_predict": 150},
         "stream": False,
     }).encode("utf-8")
 
